@@ -62,40 +62,61 @@ void write(int __fd, const void *__buf, int __n) {
         : "a0", "a1", "a2", "a7");
 }
 
-int power(int num, int n) {
-    int result = num;
-    for (int i = 0; i < (n - 1); i++) {
-        result *= num;
+int power(int base, int expoente) {
+    int result = 1;
+    while (expoente > 0) {
+        result = result * base;
+        expoente--;
     }
     return result;
 }
 
 int tamanho_string(char* str) {
     int i;
-    for (i = 0; str[i] != '\0'; i++) {
-        ;
-    }
+    for (i = 0; str[i] != '\n'; i++);
     return i;
 }
 
 int my_atoi(char* arr) {
-    int result = 0, i = 0;
-    for (int i = 0; i < tamanho_string(arr); i++) {
+    int result = 0, i = 0, tamanho = tamanho_string(arr);
+    for (int i = 0; i < tamanho; i++) {
         result = result * 10 + (arr[i] - '0');
     }
     return result;
 }
 
 int count_num_bits(char* arr_num) {
-    int num = my_atoi(arr_num);
-    int n = 0;
+    int num = my_atoi(arr_num), n = 0;
     while (power(2, n) < num) {
         n++;
-    } 
+    }
     return n;
 }
 
-void dec_to_bin(char* arr_out, char* arr_in) {
+char hex_converter(int num) {
+    switch (num) {
+        case 10:
+            return 'A';
+            break;
+        case 11:
+            return 'B';
+            break;
+        case 12:
+            return 'C';
+            break;
+        case 13:
+            return 'D';
+            break;
+        case 14:
+            return 'E';
+            break;
+        case 15:
+            return 'F';
+            break;
+    }
+}
+
+int dec_to_bin(char* arr_in, char* arr_out) {
     int num_bits = count_num_bits(arr_in), num = my_atoi(arr_in), i = 0;
     char temp[num_bits];
     while (num > 0) {
@@ -104,35 +125,51 @@ void dec_to_bin(char* arr_out, char* arr_in) {
         i++;
     }
 
+    // ajustando para reperesntação binária
+    int padrao_bin = 2;
+    arr_out[0] = '0';
+    arr_out[1] = 'b';
     // invertendo o número binário
     for (int i = 0; i < num_bits; i++) {
-        arr_out[i] = temp[num_bits - i - 1];
+        arr_out[i + padrao_bin] = temp[num_bits - i - 1];
     }
+    arr_out[num_bits + padrao_bin] = '\n';
+    return num_bits + 1 + padrao_bin;
 }
 
-void dec_to_hex(char *arr_out, char* arr_in) {
-    int num_bits = count_num_bits(arr_in), num = my_atoi, i = 0;
-    num_bits = num_bits / 4; //TODO: checar se necessário
-    char temp[num_bits];
+int dec_to_hex(char* arr_in, char* arr_out) {
+    int num_digitos = (count_num_bits(arr_in) / 4) + 1, num = my_atoi(arr_in), i = 0, resto;
+    char temp[num_digitos];
     while (num > 0) {
-        temp[i] = (char)((num % 2) + '0');
-        num = num / 2;
+        resto = num % 16;
+        if (resto <= 9) {
+            temp[i] = (char)(resto + '0');
+        } else {
+            temp[i] = hex_converter(resto);
+        }
+        num = num / 16;
         i++;
     }
 
-    //TODO: checar se necessário
-    for (int i = 0; i < num_bits; i++) {
-        arr_out[i] = temp[num_bits - i - 1];
+    //ajustando para reperesntação hexadecimal
+    int padrao_hex = 2;
+    arr_out[0] = '0';
+    arr_out[1] = 'x';
+    //invertendo o número hexadecimal
+    for (int i = 0; i < num_digitos; i++) {
+        arr_out[i + padrao_hex] = temp[num_digitos - i - 1];
     }
+    arr_out[num_digitos + padrao_hex] = '\n';
+    return num_digitos + 1 + padrao_hex;
 }
 
 int main(int argc, char* argv[]) {
     char in_buf[MAX_INPUT_SIZE], out_buf[MAX_OUT_SIZE];
-    int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE);
+    int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE), tamanho_out_buf;
     if (in_buf[0] == '0') {
         ;
     } else {
-        dec_to_bin(out_buf, in_buf);
+        tamanho_out_buf = dec_to_hex(in_buf, out_buf);
     }
-    write(STDOUT_FD, (void*)out_buf, MAX_OUT_SIZE);
+    write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
 }
