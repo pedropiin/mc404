@@ -51,11 +51,10 @@ char hex_converter(int num) {
 }
 
 int my_atoi(char* arr) {
-    int result = 0, i = 0;
-    for (int i = 0; i < tamanho_string(arr); i++) {
+    int result = 0, i = 0, tamanho = tamanho_string(arr);
+    for (int i = 0; i < tamanho; i++) {
         result = result * 10 + (arr[i] - '0');
     }
-
     return result;
 }
 
@@ -168,9 +167,32 @@ void bin_to_dec(char* arr_in, char* arr_out) {
     my_itoa(arr_out, val, 10);
 }
 
+void hex_to_dec(char* arr_in, char* arr_out) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
+            val += (int)(arr_in[i] - 'a' + 10) * power(16, count);
+        } else {
+            val += (int)(arr_in[i] - '0') * power(16, count);
+        }
+        count++;
+    }
+    my_itoa(arr_out, val, 10);
+}
+
+void oct_to_dec(char* arr_in, char* arr_out) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        val += (int)(arr_in[i] - '0') * power(8, count);
+        count++;
+    }
+    my_itoa(arr_out, val, 10);
+}
+
+
 int main(int argc, char* argv[]) {
     char out_buf[32], num[1000];
     scanf("%s", num);
-    bin_to_dec(num, out_buf);
+    hex_to_dec(num, out_buf);
     printf("%s\n", out_buf);
 }

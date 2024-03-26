@@ -136,10 +136,6 @@ int my_itoa(char* str, int num, int base) {
             }
             num = num / base;
         }
-        char teste[2];
-        teste[0] = str[i - 1];
-        teste[1] = '\n';
-        write(STDOUT_FD, (void *)teste, 2);
         str[i] = '\n';
     }
     reverse_string(str, i);
@@ -230,12 +226,37 @@ int bin_to_dec(char* arr_in, char* arr_out) {
         count++;
     }
     tamanho_out = my_itoa(arr_out, val, 10);
-    return tamanho_out;
+    return tamanho_out + 1;
+}
+
+int hex_to_dec(char* arr_in, char* arr_out) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        if (arr_in[i] == 'a' && arr_in[i] <= 'f') {
+            char temp[] = "teste\n";
+            write(STDOUT_FD, (void*)temp, 6);
+            val += (int)(arr_in[i] - 'a' + 10) * power(16, count);
+        } else {
+            val += (int)(arr_in[i] - '0') * power(16, count);
+        }
+        count++;
+    }
+    return tamanho_out + 1;
+}
+
+int oct_to_dec(char* arr_in, char* arr_out) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        val += (int)(arr_in[i] - '0') * power(8, count);
+        count++;
+    }
+    tamanho_out = my_itoa(arr_out, val, 10);
+    return tamanho_out + 1;
 }
 
 int main(int argc, char* argv[]) {
     char in_buf[MAX_INPUT_SIZE], out_buf[MAX_OUT_SIZE];
     int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE), tamanho_out_buf;
-    tamanho_out_buf = bin_to_dec(in_buf, out_buf);
+    tamanho_out_buf = hex_to_dec(in_buf, out_buf);
     write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
 }
