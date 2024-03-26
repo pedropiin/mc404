@@ -77,20 +77,16 @@ int tamanho_string(char* str) {
     return i;
 }
 
-int my_atoi(char* arr) {
-    int result = 0, i = 0, tamanho = tamanho_string(arr);
-    for (int i = 0; i < tamanho; i++) {
-        result = result * 10 + (arr[i] - '0');
+void reverse_string(char* str, int tamanho) {
+    int i = 0, j = tamanho - 1;
+    char temp;
+    while (i < j) {
+        temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
+        i++;
+        j--;
     }
-    return result;
-}
-
-int count_num_bits(char* arr_num) {
-    int num = my_atoi(arr_num), n = 0;
-    while (power(2, n) < num) {
-        n++;
-    }
-    return n;
 }
 
 char hex_converter(int num) {
@@ -115,6 +111,49 @@ char hex_converter(int num) {
             break;
     }
 }
+
+int my_atoi(char* arr) {
+    int result = 0, i = 0, tamanho = tamanho_string(arr);
+    for (int i = 0; i < tamanho; i++) {
+        result = result * 10 + (arr[i] - '0');
+    }
+    return result;
+}
+
+int my_itoa(char* str, int num, int base) {
+    int i = 0, resto;
+    if (num == 0) {
+        str[i] = '0';
+        i++;
+        str[i] = '\n';
+    } else {
+        while (num != 0) {
+            resto = num % base;
+            if (base == 16 && resto > 9) {
+                str[i++] = hex_converter(resto);
+            } else {
+                str[i++] = (char)(resto + '0');
+            }
+            num = num / base;
+        }
+        char teste[2];
+        teste[0] = str[i - 1];
+        teste[1] = '\n';
+        write(STDOUT_FD, (void *)teste, 2);
+        str[i] = '\n';
+    }
+    reverse_string(str, i);
+    return i;
+}
+
+int count_num_bits(char* arr_num) {
+    int num = my_atoi(arr_num), n = 0;
+    while (power(2, n) < num) {
+        n++;
+    }
+    return n;
+}
+
 
 int dec_to_bin(char* arr_in, char* arr_out) {
     int num_bits = count_num_bits(arr_in), num = my_atoi(arr_in), i = 0;
@@ -163,13 +202,40 @@ int dec_to_hex(char* arr_in, char* arr_out) {
     return num_digitos + 1 + padrao_hex;
 }
 
+int dec_to_oct(char* arr_in, char* arr_out) {
+    int num_digitos = (count_num_bits(arr_in) / 2) + 1, num = my_atoi(arr_in), i = 0;
+    char temp[num_digitos];
+    while (num > 0) {
+        temp[i] = (char)((num % 2) + '0');
+        num = num / 2;
+        i++;
+    }
+
+    //ajustando para representação octal
+    int padrao_oct = 2;
+    arr_out[0] = '0';
+    arr_out[1] = 'x';
+    //invertendo o número octal
+    for (int i = 0; i < num_digitos; i++) {
+        arr_out[i + padrao_oct] = temp[num_digitos - i - 1];
+    }
+    arr_out[num_digitos + padrao_oct] = '\n';
+    return num_digitos + 1 + padrao_oct;
+}
+
+int bin_to_dec(char* arr_in, char* arr_out) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        val += (int)(arr_in[i] - '0') * power(2, count);
+        count++;
+    }
+    tamanho_out = my_itoa(arr_out, val, 10);
+    return tamanho_out;
+}
+
 int main(int argc, char* argv[]) {
     char in_buf[MAX_INPUT_SIZE], out_buf[MAX_OUT_SIZE];
     int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE), tamanho_out_buf;
-    if (in_buf[0] == '0') {
-        ;
-    } else {
-        tamanho_out_buf = dec_to_hex(in_buf, out_buf);
-    }
+    tamanho_out_buf = bin_to_dec(in_buf, out_buf);
     write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
 }
