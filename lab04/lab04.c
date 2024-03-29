@@ -71,6 +71,15 @@ int power(int base, int expoente) {
     return result;
 }
 
+int which_power(int base, int num) {
+    int result = 1, i = 0;
+    while (result != num) {
+        result = result * base;
+        i++;
+    }
+    return i;
+}
+
 int tamanho_string(char* str) {
     int i;
     for (i = 0; str[i] != '\n'; i++);
@@ -121,7 +130,7 @@ int my_itoa(char* str, int num, int base) {
 
 int count_num_bits(char* arr_num) {
     int num = my_atoi(arr_num), n = 0;
-    while (power(2, n) < num) {
+    while (power(2, n) <= num) {
         n++;
     }
     return n;
@@ -150,7 +159,9 @@ int dec_to_bin(char* arr_in, char* arr_out) {
 }
 
 int dec_to_hex(char* arr_in, char* arr_out) {
-    int num_digitos = ((count_num_bits(arr_in) / 4) + 1), num = my_atoi(arr_in), i = 0, resto;
+    int num_bits = count_num_bits(arr_in);
+    int num_digitos = ((num_bits % 4) == 0) ? (num_bits / 4) : ((num_bits / 4) + 1);
+    int num = my_atoi(arr_in), i = 0, resto;
     char temp[num_digitos];
     while (num > 0) {
         resto = num % 16;
@@ -197,12 +208,9 @@ int dec_to_oct(char* arr_in, char* arr_out) {
 }
 
 int dec_to_base(char* arr_in, char* arr_out, int base) {
-    int num_digitos;
-    if (base == 2) {
-        num_digitos = count_num_bits(arr_in);
-    } else {
-        num_digitos = (count_num_bits(arr_in) / (base * 0.25)) + 1;
-    }
+    int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
+    int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
+    // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
     int num = my_atoi(arr_in), i = 0, resto;
     char temp[num_digitos];
     while (num > 0) {
@@ -294,7 +302,7 @@ int main(int argc, char* argv[]) {
         tamanho_out_buf = base_to_dec(in_buf, out_buf, 16);
     } else {
         if (in_buf[0] != '-') {
-            tamanho_out_buf = dec_to_bin(in_buf, out_buf);
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 16);
         } else {
             ;
         }
