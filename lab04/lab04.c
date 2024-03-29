@@ -136,96 +136,70 @@ int count_num_bits(char* arr_num) {
     return n;
 }
 
-
-int dec_to_bin(char* arr_in, char* arr_out) {
-    int num_bits = count_num_bits(arr_in), num = my_atoi(arr_in), i = 0;
-    char temp[num_bits];
-    while (num > 0) {
-        temp[i] = (char)((num % 2) + '0');
-        num = num / 2;
-        i++;
-    }
-
-    // ajustando para reperesntação binária
-    int padrao_bin = 2;
-    arr_out[0] = '0';
-    arr_out[1] = 'b';
-    // invertendo o número binário
-    for (int i = 0; i < num_bits; i++) {
-        arr_out[i + padrao_bin] = temp[num_bits - i - 1];
-    }
-    arr_out[num_bits + padrao_bin] = '\n';
-    return num_bits + 1 + padrao_bin;
-}
-
-int dec_to_hex(char* arr_in, char* arr_out) {
-    int num_bits = count_num_bits(arr_in);
-    int num_digitos = ((num_bits % 4) == 0) ? (num_bits / 4) : ((num_bits / 4) + 1);
-    int num = my_atoi(arr_in), i = 0, resto;
-    char temp[num_digitos];
-    while (num > 0) {
-        resto = num % 16;
-        if (resto <= 9) {
-            temp[i] = (char)(resto + '0');
-        } else {
-            temp[i] = (char)(resto + 'a' - 10);
-        }
-        num = num / 16;
-        i++;
-    }
-
-    //ajustando para reperesntação hexadecimal
-    int padrao_hex = 2;
-    arr_out[0] = '0';
-    arr_out[1] = 'x';
-    //invertendo o número hexadecimal
-    for (int i = 0; i < num_digitos; i++) {
-        arr_out[i + padrao_hex] = temp[num_digitos - i - 1];
-    }
-    arr_out[num_digitos + padrao_hex] = '\n';
-    return num_digitos + 1 + padrao_hex;
-}
-
-int dec_to_oct(char* arr_in, char* arr_out) {
-    int num_digitos = ((count_num_bits(arr_in) / 3) + 1), num = my_atoi(arr_in), i = 0;
-    char temp[num_digitos];
-    while (num > 0) {
-        temp[i] = (char)((num % 8) + '0');
-        num = num / 8;
-        i++;
-    }
-
-    //ajustando para representação octal
-    int padrao_oct = 2;
-    arr_out[0] = '0';
-    arr_out[1] = 'o';
-    //invertendo o número octal
-    for (int i = 0; i < num_digitos; i++) {
-        arr_out[i + padrao_oct] = temp[num_digitos - i - 1];
-    }
-    arr_out[num_digitos + padrao_oct] = '\n';
-    return num_digitos + 1 + padrao_oct;
-}
-
 int dec_to_base(char* arr_in, char* arr_out, int base) {
-    int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
-    int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
-    // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
-    int num = my_atoi(arr_in), i = 0, resto;
-    char temp[num_digitos];
-    while (num > 0) {
-        resto = num % base;
-        if (resto <= 9) {
-            temp[i] = (char)(resto + '0');
-        } else {
-            temp[i] = (char)(resto + 'a' - 10);
+    if (arr_in[0] != '-') { //caso positivo
+        int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
+        int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
+        // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
+        int num = my_atoi(arr_in), i = 0, resto;
+        char temp[num_digitos];
+        while (num > 0) {
+            resto = num % base;
+            if (resto <= 9) {
+                temp[i] = (char)(resto + '0');
+            } else {
+                temp[i] = (char)(resto + 'a' - 10);
+            }
+            num = num / base;
+            i++;
         }
-        num = num / base;
-        i++;
-    }
 
-    int num_chars_padrao= 2;
-    switch (base) {
+        int num_chars_padrao= 2;
+        switch (base) {
+            case 2:
+                arr_out[0] = '0';
+                arr_out[1] = 'b';
+                break;
+            case 8:
+                arr_out[0] = '0';
+                arr_out[1] = 'o';
+                break;
+            case 16:
+                arr_out[0] = '0';
+                arr_out[1] = 'x';
+                break;
+        }
+
+        for (i = 0; i < num_digitos; i++) {
+            arr_out[i + num_chars_padrao] = temp[num_digitos - i - 1];
+        }
+        arr_out[num_digitos + num_chars_padrao] = '\n';
+        return num_digitos + 1 + num_chars_padrao;
+    } else { //caso negativo
+        arr_in++;
+        int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
+        int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
+        // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
+        int num = my_atoi(arr_in), i = 0, resto;
+        char temp[num_digitos];
+        while (num > 0)
+        {
+            resto = num % base;
+            if (resto <= 9)
+            {
+                temp[i] = (char)(resto + '0');
+            }
+            else
+            {
+                temp[i] = (char)(resto + 'a' - 10);
+            }
+            num = num / base;
+            i++;
+        }
+
+        int num_chars_padrao = 2;
+        switch (base)
+        {
         case 2:
             arr_out[0] = '0';
             arr_out[1] = 'b';
@@ -238,13 +212,16 @@ int dec_to_base(char* arr_in, char* arr_out, int base) {
             arr_out[0] = '0';
             arr_out[1] = 'x';
             break;
-    }
+        }
 
-    for (i = 0; i < num_digitos; i++) {
-        arr_out[i + num_chars_padrao] = temp[num_digitos - i - 1];
+        for (i = 0; i < num_digitos; i++)
+        {
+            arr_out[i + num_chars_padrao] = temp[num_digitos - i - 1];
+        }
+        arr_out[num_digitos + num_chars_padrao] = '\n';
+        arr_in--;
+        return num_digitos + 1 + num_chars_padrao;
     }
-    arr_out[num_digitos + num_chars_padrao] = '\n';
-    return num_digitos + 1 + num_chars_padrao;
 }
 
 int base_to_dec(char* arr_in, char* arr_out, int base) {
@@ -261,51 +238,68 @@ int base_to_dec(char* arr_in, char* arr_out, int base) {
     return tamanho_out + 1;
 }
 
-int bin_to_dec(char* arr_in, char* arr_out) {
-    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
-    for (int i = tamanho_in - 1; i > 1; i--) {
-        val += (int)(arr_in[i] - '0') * power(2, count);
-        count++;
+int bin_to_comp2(char* arr) {
+    int tamanho = tamanho_string(arr), padrao_bin = 2;
+    char temp[35];
+    temp[0] = '0';
+    temp[1] = 'b';
+    int complemento = 32 - (tamanho - padrao_bin);
+    for (int i = 0; i < complemento; i++) {
+        temp[i + padrao_bin] = '1';
     }
-    tamanho_out = my_itoa(arr_out, val, 10);
-    return tamanho_out + 1;
-}
-
-int hex_to_dec(char* arr_in, char* arr_out) {
-    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
-    for (int i = tamanho_in - 1; i > 1; i--) {
-        if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
-            val += (int)(arr_in[i] - 'a' + 10) * power(16, count);
+    for (int i = 0; i < (tamanho - padrao_bin); i++) {
+        if (arr[i + padrao_bin] == '1') {
+            temp[i + complemento + padrao_bin] = '0';
         } else {
-            val += (int)(arr_in[i] - '0') * power(16, count);
+            temp[i + complemento + padrao_bin] = '1';
         }
-        count++;
     }
-    tamanho_out = my_itoa(arr_out, val, 10);
-    return tamanho_out + 1;
+    for (int i = 0; i < 34; i++) {
+        arr[i] = temp[i];
+    }
+
+    if (arr[33] == '0') {
+        arr[33] = '1';
+    } else {
+        int i = 33;
+        while (arr[i] == '1') {
+            arr[i] = '0';
+            i--;
+        }
+        arr[i] = '1';
+    }
+    arr[34] = '\n';
+    return 34;
 }
 
-int oct_to_dec(char* arr_in, char* arr_out) {
-    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
-    for (int i = tamanho_in - 1; i > 1; i--) {
-        val += (int)(arr_in[i] - '0') * power(8, count);
-        count++;
-    }
-    tamanho_out = my_itoa(arr_out, val, 10);
-    return tamanho_out + 1;
+int switch_endianness(char* arr) {
+
 }
+
 
 int main(int argc, char* argv[]) {
     char in_buf[MAX_INPUT_SIZE], out_buf[MAX_OUT_SIZE];
     int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE), tamanho_out_buf;
-    if (in_buf[1] == 'x') {
+    if (in_buf[1] == 'x') { // input em base hexadecimal
         tamanho_out_buf = base_to_dec(in_buf, out_buf, 16);
+
     } else {
-        if (in_buf[0] != '-') {
+        if (in_buf[0] != '-') { // input em base decimal positivo
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
+            write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); // base binária
+            write(STDOUT_FD, (void *)in_buf, n); //base decimal
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 16);
-        } else {
-            ;
+            write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //base hexadecimal
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 8);
+            write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //base octal
+
+        } else { // input em base decimal negativo
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
+            tamanho_out_buf = bin_to_comp2(out_buf);
         }
     }
-    write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+
+    return 0;
 }
+
+01110000010100110000100010000000
