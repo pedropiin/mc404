@@ -98,6 +98,14 @@ void reverse_string(char* str, int tamanho) {
     }
 }
 
+void copy_string(char* src, char* copy) {
+    int tamanho = tamanho_string(src);
+    for (int i = 0; i < tamanho; i++) {
+        copy[i] = src[i];
+    }
+    copy[tamanho] = '\n';
+}
+
 int my_atoi(char* arr) {
     int result = 0, i = 0, tamanho = tamanho_string(arr);
     for (int i = 0; i < tamanho; i++) {
@@ -240,7 +248,7 @@ int base_to_dec(char* arr_in, char* arr_out, int base) {
 
 int bin_to_comp2(char* arr) {
     int tamanho = tamanho_string(arr), padrao_bin = 2;
-    char temp[35];
+    char temp[MAX_OUT_SIZE];
     temp[0] = '0';
     temp[1] = 'b';
     int complemento = 32 - (tamanho - padrao_bin);
@@ -269,37 +277,100 @@ int bin_to_comp2(char* arr) {
         arr[i] = '1';
     }
     arr[34] = '\n';
-    return 34;
+    return MAX_OUT_SIZE;
 }
 
 int switch_endianness(char* arr) {
-
+    int tamanho = tamanho_string(arr), padrao_bin = 2, complemento = 32 - (tamanho - padrao_bin);
+    char temp[MAX_OUT_SIZE];
+    temp[0] = '0';
+    temp[1] = 'b';
+    for (int i = 0; i < complemento; i++) {
+        temp[i + padrao_bin] = '0';
+    }
+    for (int i = 0; i < (tamanho - padrao_bin); i++) {
+        temp[i + complemento + padrao_bin] = arr[i + padrao_bin];
+    }
+    int count = 0;
+    for (int i = 3; i >= 0; i--) {
+        for (int j = 0; j < 8; j++) {
+            arr[count + padrao_bin] = temp[((i * 8) + j) + padrao_bin];
+            count++;
+        }
+    }
+    arr[34] = '\n';
+    return MAX_OUT_SIZE;
 }
-
 
 int main(int argc, char* argv[]) {
     char in_buf[MAX_INPUT_SIZE], out_buf[MAX_OUT_SIZE];
     int n = read(STDIN_FD, (void*)in_buf, MAX_INPUT_SIZE), tamanho_out_buf;
     if (in_buf[1] == 'x') { // input em base hexadecimal
-        tamanho_out_buf = base_to_dec(in_buf, out_buf, 16);
+        char dec_buf[MAX_OUT_SIZE];
+        tamanho_out_buf = base_to_dec(in_buf, dec_buf, 16); //convertendo para decimal
+        tamanho_out_buf = dec_to_base(dec_buf, out_buf, 2); //convertendo para binário
+        write(STDOUT_FD, (void*)out_buf, tamanho_out_buf); //base binária
+
+        write(STDOUT_FD, (void*)dec_buf, tamanho_string(dec_buf) + 1); //base decimal
+
+        tamanho_out_buf = switch_endianness(out_buf);
+        char temp[MAX_OUT_SIZE];
+        copy_string(out_buf, temp);
+        tamanho_out_buf = base_to_dec(temp, out_buf, 2);
+        write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+        
+        write(STDOUT_FD, (void*)in_buf, tamanho_string(in_buf) + 1); //base hexadecimal
+
+        tamanho_out_buf = dec_to_base(dec_buf, out_buf, 8);
+        write(STDOUT_FD, (void*)out_buf, tamanho_out_buf); //base octal
 
     } else {
         if (in_buf[0] != '-') { // input em base decimal positivo
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
             write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); // base binária
+
             write(STDOUT_FD, (void *)in_buf, n); //base decimal
+
+            tamanho_out_buf = switch_endianness(out_buf);
+            char temp[MAX_OUT_SIZE];
+            copy_string(out_buf, temp);
+            tamanho_out_buf = base_to_dec(temp, out_buf, 2);
+            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 16);
             write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //base hexadecimal
+
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 8);
             write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //base octal
 
         } else { // input em base decimal negativo
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
             tamanho_out_buf = bin_to_comp2(out_buf);
+            write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);
+
+            write(STDOUT_FD, (void*)in_buf, tamanho_out_buf);
+
+            tamanho_out_buf = switch_endianness(out_buf);
+            char temp[MAX_OUT_SIZE];
+            copy_string(out_buf, temp);
+            tamanho_out_buf = base_to_dec(temp, out_buf, 2);
+            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
+            tamanho_out_buf = bin_to_comp2(out_buf);
+            tamanho_out_buf = base_to_dec(out_buf, temp, 2);
+            tamanho_out_buf = dec_to_base(temp, out_buf, 16);
+            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+
+            tamanho_out_buf = dec_to_base(in_buf, out_buf, 8);
+            write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);
         }
     }
 
     return 0;
 }
 
-01110000010100110000100010000000
+
+
+//10010000 10101100 11110111 11111111
+//                          '24'-'31'
