@@ -58,20 +58,17 @@ int my_atoi(char* arr) {
     return result;
 }
 
-void my_itoa(char* str, int num, int base) {
+int my_itoa(char* str, int num, int base) {
     int i = 0, resto;
     if (num == 0) {
-        str[i++] = '0';
+        str[i] = '0';
+        i++;
         str[i] = '\n';
     } else {
         while (num != 0) {
             resto = num % base;
-            if (base == 16) {
-                if (resto > 9) {
-                    str[i++] = hex_converter(resto);
-                } else {
-                    str[i++] = (char)(resto + '0');
-                }
+            if (base == 16 && resto > 9) {
+                str[i++] = (char)(resto + 'a' - 10);
             } else {
                 str[i++] = (char)(resto + '0');
             }
@@ -80,7 +77,28 @@ void my_itoa(char* str, int num, int base) {
         str[i] = '\n';
     }
     reverse_string(str, i);
+    return i;
 }
+
+
+int base_to_dec(char* arr_in, char* arr_out, int base) {
+    int tamanho_in = tamanho_string(arr_in), count = 0, tamanho_out;
+    unsigned long long val = 0;
+    for (int i = tamanho_in - 1; i > 1; i--) {
+        if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
+            val += (unsigned long long)(arr_in[i] - 'a' + 10) * power(base, count);
+        } else {
+            val += (unsigned long long)(arr_in[i] - '0') * power(base, count);
+            printf("soma %lld\n", (unsigned long long)(arr_in[i] - '0') * power(base, count));
+        }
+        printf("val esta como %lld\n", val);
+        count++;
+    }
+    printf("O valor de val é %lld e o de count é %d\n", val, count);
+    tamanho_out = my_itoa(arr_out, val, 10);
+    return tamanho_out + 1;
+}
+
 
 int count_num_bits(char* arr_num) {
     int num = my_atoi(arr_num);
@@ -191,8 +209,8 @@ void oct_to_dec(char* arr_in, char* arr_out) {
 
 
 int main(int argc, char* argv[]) {
-    char out_buf[32], num[1000];
+    char out_buf[35], num[35];
     scanf("%s", num);
-    hex_to_dec(num, out_buf);
+    base_to_dec(num, out_buf, 2);
     printf("%s\n", out_buf);
 }

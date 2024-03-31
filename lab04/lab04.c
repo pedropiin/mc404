@@ -233,7 +233,8 @@ int dec_to_base(char* arr_in, char* arr_out, int base) {
 }
 
 int base_to_dec(char* arr_in, char* arr_out, int base) {
-    int tamanho_in = tamanho_string(arr_in), count = 0, val = 0, tamanho_out;
+    int tamanho_in = tamanho_string(arr_in), count = 0, tamanho_out;
+    long val = 0;
     for (int i = tamanho_in - 1; i > 1; i--) {
         if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
             val += (int)(arr_in[i] - 'a' + 10) * power(base, count);
@@ -348,7 +349,7 @@ int main(int argc, char* argv[]) {
             tamanho_out_buf = bin_to_comp2(out_buf);
             write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);
 
-            write(STDOUT_FD, (void*)in_buf, tamanho_out_buf);
+            write(STDOUT_FD, (void*)in_buf, n);
 
             tamanho_out_buf = switch_endianness(out_buf);
             char temp[MAX_OUT_SIZE];
@@ -369,8 +370,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-
-
-//10010000 10101100 11110111 11111111
-//                          '24'-'31'
