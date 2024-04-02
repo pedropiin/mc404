@@ -190,7 +190,7 @@ int dec_to_base(char* arr_in, char* arr_out, int base) {
         return num_digitos + 1 + num_chars_padrao;
     } else { //caso negativo
         arr_in++;
-        int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
+        unsigned  num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
         int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
         // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
         int num = my_atoi(arr_in), i = 0, resto;
@@ -363,12 +363,12 @@ int main(int argc, char* argv[]) {
             write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //decimal com endianness invertido
 
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
-            tamanho_out_buf = bin_to_comp2(out_buf);
-            tamanho_out_buf = base_to_dec(out_buf, temp, 2);
-            tamanho_out_buf = dec_to_base(temp, out_buf, 16);
-            write(STDOUT_FD, (void*)out_buf, 35);
+            tamanho_out_buf = bin_to_comp2(out_buf); //comp2 do input
+            tamanho_out_buf = base_to_dec(out_buf, temp, 2); // temp guarda decimal do comp2
+            tamanho_out_buf = dec_to_base(temp, out_buf, 16); 
+            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
 
-            tamanho_out_buf = dec_to_base(in_buf, out_buf, 8);
+            tamanho_out_buf = dec_to_base(temp, out_buf, 8);
             write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);
         }
     }
