@@ -2,6 +2,7 @@
 #define STDOUT_FD 1
 #define MAX_INPUT_SIZE 11
 #define MAX_OUT_SIZE 35
+#define MAX_UNSIGNED_INT 4294967295
 
 
 void exit(int code) {
@@ -62,11 +63,14 @@ void write(int __fd, const void *__buf, int __n) {
         : "a0", "a1", "a2", "a7");
 }
 
-int power(int base, int expoente) {
-    int result = 1;
+unsigned int power(int base, int expoente) {
+    unsigned int result = 1;
     while (expoente > 0) {
         result = result * base;
         expoente--;
+    }
+    if ((result - 1) >= MAX_UNSIGNED_INT) {
+        return MAX_UNSIGNED_INT;
     }
     return result;
 }
@@ -96,6 +100,7 @@ void reverse_string(char* str, int tamanho) {
         i++;
         j--;
     }
+    
 }
 
 void copy_string(char* src, char* copy) {
@@ -106,15 +111,16 @@ void copy_string(char* src, char* copy) {
     copy[tamanho] = '\n';
 }
 
-int my_atoi(char* arr) {
-    int result = 0, i = 0, tamanho = tamanho_string(arr);
+unsigned int my_atoi(char* arr) {
+    unsigned int result = 0;
+    int i = 0, tamanho = tamanho_string(arr);
     for (int i = 0; i < tamanho; i++) {
         result = result * 10 + (arr[i] - '0');
     }
     return result;
 }
 
-int my_itoa(char* str, int num, int base) {
+int my_itoa(char* str, unsigned int num, int base) {
     int i = 0, resto;
     if (num == 0) {
         str[i] = '0';
@@ -136,9 +142,9 @@ int my_itoa(char* str, int num, int base) {
     return i;
 }
 
-int count_num_bits(char* arr_num) {
-    int num = my_atoi(arr_num), n = 0;
-    while (power(2, n) <= num) {
+unsigned int count_num_bits(char* arr_num) {
+    unsigned int num = my_atoi(arr_num), n = 0, pot;
+    while (pot = power(2, n) <= num) {
         n++;
     }
     return n;
@@ -146,10 +152,9 @@ int count_num_bits(char* arr_num) {
 
 int dec_to_base(char* arr_in, char* arr_out, int base) {
     if (arr_in[0] != '-') { //caso positivo
-        int num_bits = count_num_bits(arr_in), potencia = which_power(2, base);
+        unsigned int num_bits = count_num_bits(arr_in), num = my_atoi(arr_in); //32
+        int potencia = which_power(2, base), i = 0, resto;
         int num_digitos = ((num_bits % potencia) == 0) ? (num_bits / potencia) : ((num_bits / potencia) + 1);
-        // int num_digitos = (count_num_bits(arr_in) / which_power(2, base)) + 1;
-        int num = my_atoi(arr_in), i = 0, resto;
         char temp[num_digitos];
         while (num > 0) {
             resto = num % base;
@@ -234,12 +239,12 @@ int dec_to_base(char* arr_in, char* arr_out, int base) {
 
 int base_to_dec(char* arr_in, char* arr_out, int base) {
     int tamanho_in = tamanho_string(arr_in), count = 0, tamanho_out;
-    long val = 0;
+    unsigned int val = 0;
     for (int i = tamanho_in - 1; i > 1; i--) {
         if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
-            val += (int)(arr_in[i] - 'a' + 10) * power(base, count);
+            val += (unsigned int)(arr_in[i] - 'a' + 10) * power(base, count);
         } else {
-            val += (int)(arr_in[i] - '0') * power(base, count);
+            val += (unsigned int)(arr_in[i] - '0') * power(base, count);
         }
         count++;
     }
@@ -285,7 +290,7 @@ int switch_endianness(char* arr) {
     int tamanho = tamanho_string(arr), padrao_bin = 2, complemento = 32 - (tamanho - padrao_bin);
     char temp[MAX_OUT_SIZE];
     temp[0] = '0';
-    temp[1] = 'b';
+    temp[1] = 'b';  
     for (int i = 0; i < complemento; i++) {
         temp[i + padrao_bin] = '0';
     }
@@ -346,22 +351,22 @@ int main(int argc, char* argv[]) {
 
         } else { // input em base decimal negativo
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
-            tamanho_out_buf = bin_to_comp2(out_buf);
-            write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);
+            tamanho_out_buf = bin_to_comp2(out_buf); //convertendo em comp2
+            write(STDOUT_FD, (void*) out_buf, tamanho_out_buf); //base decimal comp2
 
-            write(STDOUT_FD, (void*)in_buf, n);
+            write(STDOUT_FD, (void*)in_buf, n); //base decimal
 
-            tamanho_out_buf = switch_endianness(out_buf);
+            tamanho_out_buf = switch_endianness(out_buf); // invertendo endianness
             char temp[MAX_OUT_SIZE];
             copy_string(out_buf, temp);
             tamanho_out_buf = base_to_dec(temp, out_buf, 2);
-            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+            write(STDOUT_FD, (void *)out_buf, tamanho_out_buf); //decimal com endianness invertido
 
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 2);
             tamanho_out_buf = bin_to_comp2(out_buf);
             tamanho_out_buf = base_to_dec(out_buf, temp, 2);
             tamanho_out_buf = dec_to_base(temp, out_buf, 16);
-            write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
+            write(STDOUT_FD, (void*)out_buf, 35);
 
             tamanho_out_buf = dec_to_base(in_buf, out_buf, 8);
             write(STDOUT_FD, (void*) out_buf, tamanho_out_buf);

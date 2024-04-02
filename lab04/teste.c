@@ -1,11 +1,18 @@
 #include <stdio.h>
 
-int power(int base, int expoente) {
-    int result = 1;
+#define MAX_UNSIGNED_INT 4294967295
+
+unsigned int power(int base, int expoente) {
+    unsigned int result = 1;
     while (expoente > 0) {
         result = result * base;
         expoente--;
     }
+    if ((result - 1) >= MAX_UNSIGNED_INT) {
+        printf("to aqui\n");
+        return MAX_UNSIGNED_INT;
+    }
+    printf("estou devolvendo o resultado como %u\n", result - 1);
     return result;
 }
 
@@ -58,7 +65,7 @@ int my_atoi(char* arr) {
     return result;
 }
 
-int my_itoa(char* str, int num, int base) {
+int my_itoa(char* str, unsigned int num, int base) {
     int i = 0, resto;
     if (num == 0) {
         str[i] = '0';
@@ -83,15 +90,13 @@ int my_itoa(char* str, int num, int base) {
 
 int base_to_dec(char* arr_in, char* arr_out, int base) {
     int tamanho_in = tamanho_string(arr_in), count = 0, tamanho_out;
-    unsigned long long val = 0;
+    unsigned int val = 0;
     for (int i = tamanho_in - 1; i > 1; i--) {
         if (arr_in[i] >= 'a' && arr_in[i] <= 'f') {
-            val += (unsigned long long)(arr_in[i] - 'a' + 10) * power(base, count);
+            val += (unsigned int)(arr_in[i] - 'a' + 10) * power(base, count);
         } else {
-            val += (unsigned long long)(arr_in[i] - '0') * power(base, count);
-            printf("soma %lld\n", (unsigned long long)(arr_in[i] - '0') * power(base, count));
+            val += (unsigned int)(arr_in[i] - '0') * power(base, count);
         }
-        printf("val esta como %lld\n", val);
         count++;
     }
     printf("O valor de val é %lld e o de count é %d\n", val, count);
@@ -211,6 +216,15 @@ void oct_to_dec(char* arr_in, char* arr_out) {
 int main(int argc, char* argv[]) {
     char out_buf[35], num[35];
     scanf("%s", num);
-    base_to_dec(num, out_buf, 2);
+    int tamanho_out = base_to_dec(num, out_buf, 2), n = 0, count = 0;
+    unsigned int teste = 4294421648, arroz;
+    while ((arroz = power(2, n)) <= teste) {
+        if (count >= 40) {
+            break;
+        }
+        printf("a potencia esta em %u\n", arroz);;
+        n++;
+        count++;
+    }
     printf("%s\n", out_buf);
 }
