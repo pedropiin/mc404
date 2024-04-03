@@ -317,10 +317,20 @@ int main(int argc, char* argv[]) {
         tamanho_out_buf = dec_to_base(dec_buf, out_buf, 2); //convertendo para binário
         write(STDOUT_FD, (void*)out_buf, tamanho_out_buf); //base binária
 
-        write(STDOUT_FD, (void*)dec_buf, tamanho_string(dec_buf) + 1); //base decimal
+        char temp[MAX_OUT_SIZE];
+        int tamanho_dec = tamanho_string(dec_buf);
+        if (tamanho_out_buf == 35 && out_buf[2] == '1') { // caso em que o input decimal é mais que 2^31 - 1, e portanto, por mais que positivo, o primeiro bit é 1    
+            for (int i = 0; i < tamanho_dec; i++) {
+                temp[i + 1] = dec_buf[i];
+            }
+            temp[0] = '-';
+            temp[tamanho_dec + 1] = '\n';
+            write(STDOUT_FD, (void*)temp, tamanho_dec + 2); //base decimal
+        } else {
+            write(STDOUT_FD, (void*)dec_buf, tamanho_dec + 1); //base decimal
+        }
 
         tamanho_out_buf = switch_endianness(out_buf);
-        char temp[MAX_OUT_SIZE];
         copy_string(out_buf, temp);
         tamanho_out_buf = base_to_dec(temp, out_buf, 2);
         write(STDOUT_FD, (void*)out_buf, tamanho_out_buf);
