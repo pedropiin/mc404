@@ -10,55 +10,49 @@ _start:
 
 main:
     # Código aqui
+    addi sp, sp, -4
+    sw ra, 0(sp)
+
+    la s0, input_address
     la s1, result
     la s11, result
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
     jal read
 
-    addi s2, x0, 0 # Contador do for da main
+    li s2, 0 # Contador do for da main
     li s3, 4 # Limite de iterações do for, i.e., número de bytes da entrada
     li s4, 5 # Incrementador do ponteiro s0. 5 bytes para ir para o primeiro digito do proximo numero
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal for_main
+    for_main:
+        bge s2, s3, end_for_main
 
-    ret
 
-for_main:
-    bge s2, s3, end_for_main
+        jal number_from_string
 
-    #TODO: devo somar 5 ou 40, ou seja, a soma interpreta cada unidade como byte ou bit?
-    mul t3, s2, s4
-    add s0, s0, t3
-    add s1, s1, t3
+        jal my_atoi
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal number_from_string
+        jal soma_digitos
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal my_atoi
+        jal sqrt # registrador a7 guarda valor da raíz do num da iteracao
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal soma_digitos
+        jal save_answer
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal sqrt # registrador a7 guarda valor da raíz do num da iteracao
+        li t0, 32 # valor na tabela ascii de espaço em branco
+        sb t0, 4(s1) # adicionando espaço em branco no buffer de saída
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal save_answer
+        addi s2, s2, 1
+        # mul t3, s2, s4 # t3 = i * 5
+        addi s0, s0, 5 # s0 += t3
+        addi s1, s1, 5 # s1 += t3
 
-    addi s2, s2, 1
+        j for_main
+    end_for_main:
 
-    j for_main
-end_for_main:
+    li t0, 10 # valor na tabela ascii de newline
+    sb t0, 19(s11) # adicionando newline no buffer de saída
+
+    jal write
+
     lw ra, 0(sp)
     addi sp, sp, 4
     ret
@@ -66,7 +60,7 @@ end_for_main:
 
 read:
     li a0, 0            # file descriptor = 0 (stdin)
-    la s0, input_adress # buffer
+    la a1, input_address # buffer
     li a2, 20           # size - Reads 20 bytes.
     li a7, 63           # syscall read (63)
     ecall
@@ -87,9 +81,6 @@ number_from_string:
     lbu a3, 2(s0)
     lbu a4, 3(s0)
 
-    lw ra, 0(sp)
-    addi sp, sp, 4
-
     ret
 
 my_atoi:
@@ -98,9 +89,6 @@ my_atoi:
     add a2, a2, -48
     add a3, a3, -48
     add a4, a4, -48
-
-    lw ra, 0(sp)
-    addi sp, sp, 4
 
     ret
 
@@ -120,15 +108,12 @@ soma_digitos:
     li t0, 10
     mul a3, a3, t0
 
-    li t0, 0
-    mv a0, t0
+    li a0, 0
     add a0, a0, a1
     add a0, a0, a2
     add a0, a0, a3
     add a0, a0, a4
 
-    lw ra, 0(sp)
-    addi sp, sp, 4
     ret
 
 sqrt:
@@ -145,28 +130,22 @@ sqrt:
     li a1, 0 # variável de iteração e contagem 'i'
     li a2, 10 # variável de limite do for
 
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal for_sqrt
+    for_sqrt:
+        bge a1, a2, end_for_sqrt
 
-    lw ra, 0(sp)
-    addi sp, sp, 4
+        div t1, a0, t0 # t1 = a0 / t0 ==> t1 = y / k
+        add t0, t0, t1 # t0 = t0 + t1 ==> t0 = k + t1 = k + y / k
+        div t0, t0, t2 # t0 = t0 / t2 ==> t0 = (k + y / k) / 2
+
+        addi a1, a1, 1
+
+        j for_sqrt
+    end_for_sqrt:
+
+    mv a7, t0
+
     ret
 
-for_sqrt:
-    bge a1, a2, end_for_sqrt
-
-    div t1, a0, t0 # t1 = a0 / t0 ==> t1 = y / k
-    add t0, t0, t1 # t0 = t0 + t1 ==> t0 = k + t1 = k + y / k
-    div t0, t0, t2 # t0 = t0 / t2 ==> t0 = (k + y / k) / 2
-
-    addi a1, a1, 1
-
-    j for_sqrt
-end_for_sqrt:
-    lw ra, 0(sp)
-    addi sp, sp, 4
-    ret
 
 
 save_answer:
@@ -178,26 +157,28 @@ save_answer:
     # guarda dígito mais significante
     li t0, 1000
     div t1, a7, t0
+    addi t1, t1, 48
     sb t1, 0(s1)
     rem a7, a7, t0
 
     # guarda segundo dígito mais significante
     li t0, 100
     div t1, a7, t0
+    addi t1, t1, 48
     sb t1, 1(s1)
     rem a7, a7, t0
 
     # guarda terceiro dígito mais significante
     li t0, 10
     div t1, a7, t0
+    addi t1, t1, 48
     sb t1, 2(s1)
     rem a7, a7, t0
 
     # guarda quarto bit mais significante
+    addi a7, a7, 48
     sb a7, 3(s1)
 
-    lw ra, 0(sp)
-    addi sp, sp, 4
     ret
 
 .bss
