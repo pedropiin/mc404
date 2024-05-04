@@ -25,6 +25,12 @@ main:
         # s5 = Ta
         # s6 = Tb
         # s7 = Tc
+        # s8 = da
+        # s9 = db
+        # s10 = dc
+
+        # a0 = x
+        # a1 = y
 
     # Guarda return adress na stack
     addi sp, sp, -4
@@ -35,15 +41,19 @@ main:
     la s1, result
     la s11, result
 
+    jal le_distancias
+
+    la s0, input_address
+
     jal le_tempos
 
-    #
-    mv a7, s3
-    jal save_answer
-    li t0, 10
-    sb t0, 5(s11)
+    jal calcula_distancias
+
+    jal calcula_posicoes
+
+    jal salva_resposta
+
     jal write
-    #
 
     lw ra, 0(sp)
     addi sp, sp, 4
@@ -113,21 +123,21 @@ sqrt:
 
     li t2, 2 # divisão frequente padrão no método de aproximação
     div t0, a0, t2
-    li a1, 0 # variável de iteração e contagem 'i'
-    li a2, 21 # variável de limite do for
+    li t3, 0 # variável de iteração e contagem 'i'
+    li t4, 21 # variável de limite do for
 
     for_sqrt:
-        bge a1, a2, end_for_sqrt
+        bge t3, t4, end_for_sqrt
 
         div t1, a0, t0
         add t0, t0, t1
         div t0, t0, t2
-        addi a1, a1, 1
+        addi t3, t3, 1
         
         j for_sqrt
     end_for_sqrt:
 
-    mv a7, t0
+    mv a0, t0
     
     ret
 
@@ -166,7 +176,7 @@ save_answer:
 # Função que le os dois primeiros inputs (Xc e Yb) e 
 # guarda seus valores convertidos para inteiros em 
 # s2 e s3, respectivamente
-le_tempos:
+le_distancias:
     addi sp, sp, -4
     sw ra, 0(sp)
 
@@ -206,15 +216,230 @@ e_positivo1:
     li t0, 43
     beq t6, t0, e_positivo2
     li t0, -2
-    mul s2, s2, t0
+    mul s3, s3, t0
 e_positivo2:
 
     lw ra, 0(sp)
     addi sp, sp, 4
     ret
 
+le_tempos:
+    addi sp, sp, -4
+    sw ra, 0(sp)
+
+    jal read
+
+    # Seção a seguir de recebimento de número poderia ser 
+    # feita em um for, porém, por guardar cada número em
+    # uma variável diferente, mais fácil assim
+
+    # --- Início da seção ineficiente ---
+
+    # Opera sobre primeiro número do input
+    jal number_from_string
+    jal my_atoi
+    jal soma_digitos
+
+    # s4 guarda Tr
+    mv s4, a0
+
+    addi s0, s0, 5 # ajustando ponteiro para próximo número
+
+    # Opera sobre segundo número do input
+    jal number_from_string
+    jal my_atoi
+    jal soma_digitos
+
+    # s5 guarda Ta
+    mv s5, a0
+
+    addi s0, s0, 5 # ajustando ponteiro para próximo número
+
+    # Opera sobre terceiro número do input
+    jal number_from_string
+    jal my_atoi
+    jal soma_digitos
+
+    # s6 guarda Tb
+    mv s6, a0
+
+    addi s0, s0, 5 # ajustando ponteiro para próximo número
+
+    # Opera sobre último número do input
+    jal number_from_string
+    jal my_atoi
+    jal soma_digitos
+
+    # s7 guarda Tc
+    mv s7, a0
+
+    # --- Fim da seção ineficiente ---
+
+    lw ra, 0(sp)
+    addi sp, sp, 4
+    ret
+
+calcula_distancias:
+
+    # Cálculo de da
+    li t3, 3
+    sub t0, s4, s5 # Tr - Ta
+    mul s8, t0, t3 # (Tr - Ta) * 3
+    li t0, 10
+    div s8, s8, t0 # s8 / 10 para ajustar as unidades
+
+    # Cálculo de db
+    sub t0, s4, s6 # Tr - Tb
+    mul s9, t0, t3 # (Tr - Tb) * 3
+    li t0, 10
+    div s9, s9, t0 # s9 / 10 para ajustar as unidades
+
+    # Cálculo de dc
+    sub t0, s4, s7 # Tr - Tc
+    mul s10, t0, t3 # (Tr - Tc) * 3
+    li t0, 10
+    div s10, s10, t0 # s10 / 10 para ajustar as unidades
+
+    ret
+
+testa_valor_x:
+
+    # Caso 1: x > 0
+    mv t0, a0 
+    sub t0, t0, s2
+    mul t0, t0, t0
+    add t0, t0, a1
+
+    # Caso 2: x < 0
+    mv t1, a0
+    li t2, -2
+    mul t1, t1, t2
+    sub t1, t1, s2
+    mul t1, t1, t1
+    add t1, t1, a1
+
+    mul t2, s10, s10 # t2 = dc^2
+
+    # Comparação
+    sub t0, t0, t2 # t0 = x > 0 - dc^2
+    sub t1, t1, t2 # t1 = x < 0 - dc^2
+
+    blt t0, t1, x_positivo
+    li t2, -2
+    mul a0, a0, t2
+x_positivo:
+    ret
+
+calcula_posicoes:
+    addi sp, sp, -4
+    sw ra, 0(sp)
+
+    # --- Cálculo de y --- 
+    mul t0, s8, s8 # t0 = da^2
+    mul t1, s3, s3 # t1 = Yb^2
+    mul t2, s9, s9 # t2 = db^2
+    
+    add t0, t0, t1 # t0 = da^2 + yb^2
+    sub t0, t0, t2 # t0 = da^2 + yb^2 - db^2
+
+    li t2, 2
+    mul t2, s3, t2 # t2 = 2 * yb
+    div a1, t0, t2 # a1 = (da^2 + yb^2 - db^2) / 2 * yb
+
+    # --- Cálculo de x ---
+    mul t0, s8, s8 # t0 = da^2
+    mul t1, a1, a1 # t1 = y^2
+    sub a0, t0, t1 # a0 = da^2 - y^2
+
+    jal sqrt # a0 guarda o valor da raíz de a0, isto é, sqrt(da^2 - y^2)
+    
+    jal testa_valor_x
+
+    lw ra, 0(sp)
+    addi sp, sp, 4
+    ret
+
+salva_resposta:
+
+    # --- Valor de x ---
+    bge a0, x0, else_x
+    li t0, 45
+    sb t0, 0(s1)
+    j cont_x
+else_x: # x > 0
+    li t0, 43
+    sb t0, 0(s1)
+cont_x:
+    # guarda dígito mais significante
+    li t0, 1000
+    div t1, a0, t0
+    addi t1, t1, 48
+    sb t1, 1(s1)
+    rem a0, a0, t0
+
+    # guarda segundo dítigo mais significante
+    li t0, 100
+    div t1, a0, t0
+    addi t1, t1, 48
+    sb t1, 2(s1)
+    rem a0, a0, t0
+    
+    # guarda terceiro dítigo mais significante
+    li t0, 10
+    div t1, a0, t0
+    addi t1, t1, 48
+    sb t1, 3(s1)
+    rem a0, a0, t0
+
+    # guarda quarto dítigo mais significante
+    addi a0, a0, 48
+    sb a0, 4(s1)
+
+    li t0, 32
+    sb t0, 5(s1)
+    addi s1, s1, 6
+
+
+    # --- Valor de y ---
+    bge a1, x0, else_y
+    li t0, 45
+    sb t0, 0(s1)
+    j cont_y
+else_y: # y > 0
+    li t0, 43
+    sb t0, 0(s1)
+cont_y:
+    # guarda dígito mais significante
+    li t0, 1000
+    div t1, a1, t0
+    addi t1, t1, 48
+    sb t1, 1(s1)
+    rem a1, a1, t0
+
+    # guarda segundo dígito mais significante
+    li t0, 100
+    div t1, a1, t0
+    addi t1, t1, 48
+    sb t1, 2(s1)
+    rem a1, a1, t0
+
+    # guarda terceiro dígito mais significante
+    li t0, 10
+    div t1, a1, t0
+    addi t1, t1, 48
+    sb t1, 3(s1)
+    rem a1, a1, t0
+
+    # guarda quarto dígito mais significante
+    addi a1, a1, 48
+    sb a1, 4(s1)
+
+    li t0, 10
+    sb t0, 5(s1)
+
+    ret
+
 .bss
 
 input_address: .skip 0x20  # buffer
-
 result: .skip 0x20
