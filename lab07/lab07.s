@@ -62,7 +62,6 @@ main:
 read:
     li a0, 0            # file descriptor = 0 (stdin)
     la a1, input_address # buffer
-    li a2, 20           # size - Reads 20 bytes.
     li a7, 63           # syscall read (63)
     ecall
     ret
@@ -141,38 +140,6 @@ sqrt:
     
     ret
 
-# Função para escrever um inteiro de 4 dígitos no buffer de saída
-# no formato DDDD
-# Input: a7 (int): inteiro que se deseja printar
-#        s1 (ptr): ponteiro para posição atual do buffer de escrita
-save_answer:
-
-    li t0, 1000
-    div t1, a7, t0
-    addi t1, t1, 48
-    sb t1, 0(s1)
-    rem a7, a7, t0
-
-    # guarda segundo dígito mais significante
-    li t0, 100
-    div t1, a7, t0
-    addi t1, t1, 48
-    sb t1, 1(s1)
-    rem a7, a7, t0
-
-    # guarda terceiro dígito mais significante
-    li t0, 10
-    div t1, a7, t0
-    addi t1, t1, 48
-    sb t1, 2(s1)
-    rem a7, a7, t0
-
-    # guarda quarto bit mais significante
-    addi a7, a7, 48
-    sb a7, 3(s1)
-
-    ret
-
 # Função que le os dois primeiros inputs (Xc e Yb) e 
 # guarda seus valores convertidos para inteiros em 
 # s2 e s3, respectivamente
@@ -180,11 +147,12 @@ le_distancias:
     addi sp, sp, -4
     sw ra, 0(sp)
 
+    li a2, 12
     jal read
 
     # guarda sinal do primeiro num
     lbu t6, 0(s0)
-    addi s0, s0, 1 
+    addi s0, s0, 1
 
     jal number_from_string
     jal my_atoi
@@ -196,12 +164,12 @@ le_distancias:
     # checa e converte conforme o sinal
     li t0, 43
     beq t6, t0, e_positivo1
-    li t0, -2
+    li t0, -1
     mul s2, s2, t0
 e_positivo1:
 
     # ajusta s0 para próximo sinal e guarda sinal do segundo num
-    addi s0, s0, 5 
+    addi s0, s0, 5
     lbu t6, 0(s0)
     addi s0, s0, 1
 
@@ -215,7 +183,7 @@ e_positivo1:
     # checa e converte conforme o sinal
     li t0, 43
     beq t6, t0, e_positivo2
-    li t0, -2
+    li t0, -1
     mul s3, s3, t0
 e_positivo2:
 
@@ -227,6 +195,7 @@ le_tempos:
     addi sp, sp, -4
     sw ra, 0(sp)
 
+    li a2, 20
     jal read
 
     # Seção a seguir de recebimento de número poderia ser 
@@ -303,20 +272,21 @@ calcula_distancias:
     ret
 
 testa_valor_x:
-
     # Caso 1: x > 0
-    mv t0, a0 
-    sub t0, t0, s2
-    mul t0, t0, t0
-    add t0, t0, a1
+    mv t0, a0 # t0 = x
+    sub t0, t0, s2 # (x - Xc)
+    mul t0, t0, t0 # t0 = (x - Xc)²
+    mul t3, a1, a1 # t3 = y²
+    add t0, t0, t3 # t0 = (x - Xc)² + y²
 
     # Caso 2: x < 0
-    mv t1, a0
-    li t2, -2
-    mul t1, t1, t2
-    sub t1, t1, s2
-    mul t1, t1, t1
-    add t1, t1, a1
+    mv t1, a0 # t1 = x
+    li t2, -1 
+    mul t1, t1, t2 # t1 = -t1
+    sub t1, t1, s2 # t1 = (-x - Xc)
+    mul t1, t1, t1 # t1 = (-x - Xc)²
+    mul t3, a1, a1 # t3 = y²
+    add t1, t1, t3 # (-x - Xc)² + y²
 
     mul t2, s10, s10 # t2 = dc^2
 
@@ -324,8 +294,19 @@ testa_valor_x:
     sub t0, t0, t2 # t0 = x > 0 - dc^2
     sub t1, t1, t2 # t1 = x < 0 - dc^2
 
+    # convertendo valores das diferenças para valor absoluto
+    bge t0, x0, dif1_pos
+    li t4, -1
+    mul t0, t0, t4
+dif1_pos:
+
+    bge t1, x0, dif2_pos
+    li t4, -1
+    mul t1, t1, t4
+dif2_pos:
+
     blt t0, t1, x_positivo
-    li t2, -2
+    li t2, -1
     mul a0, a0, t2
 x_positivo:
     ret
@@ -365,6 +346,8 @@ salva_resposta:
     bge a0, x0, else_x
     li t0, 45
     sb t0, 0(s1)
+    li t0, -1
+    mul a0, a0, t0
     j cont_x
 else_x: # x > 0
     li t0, 43
@@ -404,6 +387,8 @@ cont_x:
     bge a1, x0, else_y
     li t0, 45
     sb t0, 0(s1)
+    li t0, -1
+    mul a1, a1, t0
     j cont_y
 else_y: # y > 0
     li t0, 43
