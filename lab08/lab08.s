@@ -101,6 +101,9 @@ get_info_header:
     addi a0, a0, -48
     mv s1, a0
 
+    # Ajusta s0 para apontar para o primeiro dígito de y
+    addi s0, s0, 5
+
     j cont_white_space
 not_white_space: 
     # a1 != ' '
@@ -113,8 +116,12 @@ not_white_space:
     addi a0, a0, -48
     addi a1, a1, -48
     li t0, 10
-    mul a1, a1, t0
-    add s1, a1, a0
+    mul a0, a0, t0
+    mv s1, a0
+    add s1, s1, a1
+
+    # Ajusta s0 para apontar para o primeiro dígito de y
+    addi s0, s0, 6
 
     j cont_white_space
 second_not_white_space:
@@ -132,38 +139,67 @@ second_not_white_space:
     mul a1, a1, t0
     add s1, s1, a1
     add s1, s1, a2
+
+    # Ajusta s0 para apontar para o primeiro dígito de y
+    addi s0, s0, 7
+
 cont_white_space:
-    # !!! Imagens quadradas. Portanto, n_linhas = n_colunas => s1 = s2.
-    # Desse modo, não é necessário guardar valor de colunas em s2, pois 
-    # já se tem acesso com o próprio s1
+    # --- Necessário repetir o processo para o número das colunas ---
+
+    # Le o número de colunas
+    lbu a0, 0(s0)
+    lbu a1, 1(s0)
+
+    # Converte o número de colunas em inteiro
+    li t0, 10
+    bne a1, t0, y_not_white_space
+    # --- Se segundo dígito for um newline ---
+    addi a0, a0, -48
+    mv s2, a0
+
+    # Ajusta s0 para apontar para o primeiro dígito de alpha
+    addi s0, s0, 2
+
+    j cont_y_white_space
+y_not_white_space:
+    # a1 != ' '
+    lbu a2, 2(s0)
+    li t0, 10
+    bne a2, t0, y_second_not_white_space
+    # --- Se o terceiro dígito for um newline  ---  
+    addi a0, a0, -48
+    addi a1, a1, -48
+    li t0, 10
+    mul a0, a0, t0
+    mv s2, a0
+    add s2, s2, a1
+
+    addi s0, s0, 3
+
+    j cont_y_white_space
+y_second_not_white_space:
+    # a2 != ' '
+
+    addi a0, a0, -48
+    addi a1, a1, -48
+    addi a2, a2, -48
+    li t0, 100
+    mul a0, a0, t0
+    mv s2, a0
+    li t0, 10
+    mul a1, a1, t0
+    add s2, s2, a1
+    add s2, s2, a2
+
+    addi s0, s0, 4
+
+cont_y_white_space:
+    # Agora s1 guarda valor de x, s2 guarda valor de y e s0 aponta 
+    # para o primeiro dígito do valor de alpha
     ret
 
 
 sets_s0:
-    # A dimensão de cada imagem varia, junto com o número de bytes 
-    # que essa informação ocupa.
-    li t1, 10
-    rem t0, s1, t1
-
-    bne t0, x0, dim_two_digits
-    # Dimensão é um número menor que 10
-    addi s0, s0, 7 # Aponta para o primeiro dígito do valor de alpha
-
-    j cont_if
-dim_two_digits:
-    li t1, 100
-    rem t0, s1, t1
-
-    bne t0, x0, dim_three_digits
-    # Dimensão é um número entre 10 e 99
-    addi s0, s0, 9 # Aponta para o primeiro dígito do valor de alpha
-
-    j cont_if
-dim_three_digits:
-    # Dimensão é um número entre 100 e 255
-
-    addi s0, s0, 11 # Aponta para o primeiro dígito do valor de alpha
-cont_if:
     # --- Necessário agora checar quantos dígitos no valor de alpha ---
     lbu a0, 0(s0) # Primeiro dígito de alpha
     lbu a1, 1(s0) # Supostamente segundo dígito de alpha
@@ -201,6 +237,8 @@ process_image:
     li t4, 0 # variável de iteração e contagem 'j'
     mv t5, s1 # variável de limite do for, isto é, num_linhas
 
+    la a2, buffer_a2
+
     for_num_linhas:
         bge t3, t5, end_for_num_linhas
         
@@ -211,10 +249,22 @@ process_image:
             lbu t1, 0(s0) # Valor do pixel da iteração
 
             # --- Guardando valores do pixel em a2 para chamar setPixel
-            sb t2, 0(a2) # Valor de alpha
-            sb t1, 1(a2) # Valor de B
-            sb t1, 2(a2) # Valor de G
-            sb t1, 3(a2) # Valor de R
+            # Settando a2 como 0
+            li a2, 0x00000000
+
+            # Left shift em t1 para que os valores de RGB fiquem da forma:
+            # R = 0xRR000000
+            # G = 0x00GG0000
+            # B = 0x0000BB00
+            slli s5, t1, 24
+            slli s6, t1, 16
+            slli s7, t1, 8
+
+            # Adicionando os valores em a2
+            add a2, a2, t2
+            add a2, a2, s5
+            add a2, a2, s6
+            add a2, a2, s7
 
             mv a0, t4 # Posição da coordenada x do pixel
             mv a1, t3 # Posição da coordenada y do pixel
@@ -246,6 +296,7 @@ set_pixel:
 
 .bss
 input_address: .skip 0x4000f
+buffer_a2: .skip 0x04
 
 .data
 input_file: .asciz "image.pgm"
