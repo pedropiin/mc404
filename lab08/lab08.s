@@ -8,17 +8,18 @@ _start:
 
 .text
 
-# s0 = &input_adress
+# s0 = endereço atual de input_adress
 # s1 = num linhas
 # s2 = num colunas
 # s3 = índice do primeiro pixel
+# s4 = endereço inicial de input_adress
 
 
 # 1º Ler informações da imagem
     # cabeçalho PGM é da forma:
-        # P2
-        # NN YY
-        # AAA
+        # P2\n
+        # NNN YYY\n
+        # AAA\n
     # Então, comçear a ler do 3º byte (3(s0))
     # Ler um char, verificar se o próximo é espaço ou não
         # Caso seja espaço, converter para decimal e guardar
@@ -37,12 +38,19 @@ main:
     addi sp, sp, -4
     sw ra, 0(sp)
 
-    la s0, input_address
+
+    la s4, input_address    # Ponteiro constante para a primeira posição do arquivo.
+
     jal open
     jal read
 
+    la s0, input_address    # Vai ser atualizado a cada iteração, 
+                            # apontando sempre para o pixel da iteração
+
     jal get_info_header
     
+    jal sets_s0
+
     jal set_canvas_size
 
     jal process_image
@@ -57,11 +65,14 @@ open:
     li a2, 0
     li a7, 1024
     ecall
+    ret
 
 read:
     la a1, input_address # buffer
-    li a7, 63           # syscall read (63)
+    li a2, 262159
+    li a7, 63            # syscall read (63)
     ecall
+    ret
 
 
 set_canvas_size:
@@ -69,33 +80,48 @@ set_canvas_size:
     mv a1, s1
     li a7, 2201
     ecall
+    ret
 
 
 get_info_header:
     # --- Lê número de linhas ---
-    lbu a0, 3(s0) 
-    lbu a1, 4(s0)
+    lbu a0, 3(s0) # Le primeiro dígito da dimensão
+    lbu a1, 4(s0) # Le byte após primeiro dígito da dimensão. Pode ser segundo dígito ou ' '
+
+    # Não se sabe o número de linhas. Portanto, pode
+    # ser um número de 1, 2 ou 3 dígitos, implicando
+    # em quantidades diferentes de bytes a serem lidos.
 
     # --- Converte número de linhas em inteiro
     li t0, 32
     bne a1, t0, not_white_space 
-    # Se segundo dígito for um espaço
+    
+    # --- Se segundo dígito for um espaço ---
+    # Converte o único dígito em inteiro e guarda em s1
     addi a0, a0, -48
     mv s1, a0
+
     j cont_white_space
 not_white_space: 
     # a1 != ' '
     lbu a2, 5(s0)
-    bne a2, t0, second_not_white_space: 
-    # Se terceiro dígito for um espaço
+    li t0, 32
+    bne a2, t0, second_not_white_space
+
+    # --- Se terceiro dígito for um espaço ---
+    # Converte os dois dígitos em inteiros e guarda em s1
     addi a0, a0, -48
     addi a1, a1, -48
     li t0, 10
     mul a1, a1, t0
     add s1, a1, a0
+
     j cont_white_space
 second_not_white_space:
     # a2 != ' '
+
+    # --- Se terceiro dígito não for um espaço ---
+    # Converte os tres dígitos em inteiros e guarda em s1
     addi a0, a0, -48
     addi a1, a1, -48
     addi a2, a2, -48
@@ -113,25 +139,63 @@ cont_white_space:
     ret
 
 
+sets_s0:
+    # A dimensão de cada imagem varia, junto com o número de bytes 
+    # que essa informação ocupa.
+    li t1, 10
+    rem t0, s1, t1
+
+    bne t0, x0, dim_two_digits
+    # Dimensão é um número menor que 10
+    addi s0, s0, 7 # Aponta para o primeiro dígito do valor de alpha
+
+    j cont_if
+dim_two_digits:
+    li t1, 100
+    rem t0, s1, t1
+
+    bne t0, x0, dim_three_digits
+    # Dimensão é um número entre 10 e 99
+    addi s0, s0, 9 # Aponta para o primeiro dígito do valor de alpha
+
+    j cont_if
+dim_three_digits:
+    # Dimensão é um número entre 100 e 255
+
+    addi s0, s0, 11 # Aponta para o primeiro dígito do valor de alpha
+cont_if:
+    # --- Necessário agora checar quantos dígitos no valor de alpha ---
+    lbu a0, 0(s0) # Primeiro dígito de alpha
+    lbu a1, 1(s0) # Supostamente segundo dígito de alpha
+
+    li t0, 32 # Valor em ASCII de ' '
+    bne a1, t0, two_digits
+    addi s0, s0, 2 # Aponta para o primeiro dígito da imagem
+
+    j end_func
+two_digits:
+    # --- Valor de alpha entre 10 e 99 ---
+    lbu a2, 2(s0) # Recebe terceiro dígito
+
+    li t0, 10 # Valor em ASCII de '\n'
+    bne a2, t0, three_digits
+    addi s0, s0, 3
+
+    j end_func
+three_digits:
+    # --- Valor de alpha entre 100 e 255 ---
+    addi s0, s0, 4
+end_func:
+    ret
+
+
 process_image:
     addi sp, sp, -4
     sw ra, 0(sp)
 
-    # s0 = &input_adress == array com todos os pixels
+    # s0 = ponteiro para posição do byte atual da array de pixels
     # s1 = n_linhas = n_colunas
 
-    #                   ---------
-    # Checa qual posição de s0 guarda o primeiro pixel,
-    # pois caso tenhamos uma imagem de, e.g. tamanho 8x8,
-    # o primeiro pixel está em posição diferente da 
-    # imagem de tamanho 12x12. Isso se deve ao espaço ocupado
-    # pelo header 
-    #                   ----------
-    li s3, 13
-    li t0, 10
-    bge s1, t0, cont_process
-    li s3, 11
-cont_process:
     li t2, 255 # Valor constante do alpha
     li t3, 0 # variável de iteração e contagem 'i'
     li t4, 0 # variável de iteração e contagem 'j'
@@ -144,26 +208,27 @@ cont_process:
             bge t4, t5, end_for_num_colunas
 
             # Posição do pixel atual é do formato ((s1 * i) + j) + s3
-            mul t0, s1, t3
-            add t0, t0, t4
-            add t0, t0, s3
-            lbu t1, t0(s0) # Valor do pixel da iteração
+            lbu t1, 0(s0) # Valor do pixel da iteração
 
             # --- Guardando valores do pixel em a2 para chamar setPixel
-            sb t1, 0(a2) # Valor de R
-            sb t1, 1(a2) # Valor de G
-            sb t1, 2(a2) # Valor de B
-            sb t2, 3(a2) # Valor de alpha
+            sb t2, 0(a2) # Valor de alpha
+            sb t1, 1(a2) # Valor de B
+            sb t1, 2(a2) # Valor de G
+            sb t1, 3(a2) # Valor de R
 
-            mv a0, t3 # Posição da coordenada x do pixel
-            mv a1, t4 # Posição da coordenada y do pixel
+            mv a0, t4 # Posição da coordenada x do pixel
+            mv a1, t3 # Posição da coordenada y do pixel
             jal set_pixel
 
-            addi t4, t4, 1
+            addi t4, t4, 1 # Atualiza variável de iteração 'j' do for de colunas
+            addi s0, s0, 1 # Atualiza ponteiro do pixel para apontar para próximo pixel
+
             j for_num_colunas
         end_for_num_colunas:
 
-        addi t3, t3, 1
+        addi t3, t3, 1 # Atualiza variável de iteração 'i' do for de linhas
+        li t4, 0
+
         j for_num_linhas
     end_for_num_linhas:
 
@@ -176,8 +241,11 @@ set_pixel:
     # Valores de a0, a1 e a2 são definidos antes da chamada da função
     li a7, 2200
     ecall
+    ret
 
 
 .bss
-input_file: .asciz "image.pgm"
 input_address: .skip 0x4000f
+
+.data
+input_file: .asciz "image.pgm"
