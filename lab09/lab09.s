@@ -192,9 +192,9 @@ save_answer:
         addi t3, t3, 48 # convert to ASCII
         sb t3, 0(s11) # store the digit in the buffer
         
+        rem t5, t5, t1 # t5 = t5 % t1
         li t3, 10
         div t1, t1, t3 # t1 = t1 / 10
-        rem t5, t5, t1 # t5 = t5 % t1
 
         addi s11, s11, 1 # move to the next byte
         addi t2, t2, 1 # count += 1
