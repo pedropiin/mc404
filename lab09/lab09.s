@@ -93,6 +93,7 @@ get_input:
 
         addi s0, s0, 1 # getting the next byte
         lbu t1, 0(s0)
+        j while_input
     end_while_input:
 
     li t2, 1
@@ -129,6 +130,7 @@ solve:
         beq t4, s1, cont_solve # break if sum == input
 
         addi t5, t5, 1 # count += 1
+        j while_not_found
     not_found:
         li t5, -1
 cont_solve:
@@ -141,16 +143,17 @@ output_size:
 
     li t0, 1 # count
     li t1, 10 # divisor
-    rem t2, t5, t1 # remainder
+    div t2, t5, t1 # remainder
 
     while_output_size:
         beq t2, x0, end_while_output_size # break if remainder == 0
 
         li t3, 10
         mul t1, t1, t3 # multiply divisor by 10
-        rem t2, t5, t1 # get the remainder
+        div t2, t5, t1 # get the remainder
 
         addi t0, t0, 1 # count += 1
+        j while_output_size
     end_while_output_size:
     ret
 
@@ -177,6 +180,7 @@ save_answer:
 
         mul t1, t1, t3 # multiply divisor by 10
         addi t2, t2, 1 # count += 1
+        j for_remainder
     end_for_remainder:
 
     # ----- Storing the answer in the result buffer -----
@@ -194,6 +198,7 @@ save_answer:
 
         addi s11, s11, 1 # move to the next byte
         addi t2, t2, 1 # count += 1
+        j while_saving_input
     end_while_saving_input:
     li t2, 10
     sb t2, 0(s11) # store newline
