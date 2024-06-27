@@ -6,7 +6,48 @@
 .globl exit
 
 recursive_tree_search:
-    
+    # We receive the pointer to the node in a0
+    # and the desired value in a1
+
+    li s0, 0 # depth counter
+    mv s2, sp # pointer to the stack originally
+    sw ra, 0(sp) # stores the return address
+    la ra, found # stores the address of the found label
+
+    tree_search:
+        addi s0, s0, 1
+
+        addi sp, sp, -4
+        sw ra, 0(sp) # stores the return address
+        addi sp, sp, -4 
+        sw a0, 0(sp) # stores the address of the current node
+
+        lw t0, 0(a0) # value stored in the node
+        beq t0, a1, found # branch if value in node == desired
+
+        lw a0, 4(a0) # address to the left child node
+        beq a0, x0, no_left_node # branch if left child node == 0
+
+        jal tree_search
+    no_left_node:
+        lw t0, 0(sp)
+        lw a0, 8(t0) # address to the right child node
+        beq a0, x0, no_right_node # branch if right child node == 0
+
+        jal tree_search
+    no_right_node:
+        addi sp, sp, 4
+        lw ra, 0(sp) # restores the address of the return address
+        addi sp, sp, 4
+        lw a0, 0(sp) # restores the address of the parent node
+
+        addi s0, s0, -1
+        ret
+    found:
+        mv a0, s0 # returns the depth of the node
+        mv sp, s2
+        lw ra, 0(sp) # restores return address
+    ret
 
 puts:
     # We receive pointer to string in a0
@@ -36,6 +77,7 @@ puts:
 
     li t1, 10
     sb t1, 0(t5) # add newline
+    addi t2, t2, 1 # increment size
 
     mv a1, a0
     mv a2, t2
@@ -51,7 +93,7 @@ gets:
 
     mv t5, a0 # pointer to buffer
     mv a1, a0 # pointer to buffer used in read
-    li a2, 999 # buffer size
+    li a2, 20 # buffer size
     
     jal read
 
@@ -87,12 +129,13 @@ negative_number:
     addi t5, t5, 1
 cont_atoi:
     addi t1, t1, -48 # converting the byte to an integer
-
+    mv t0, t1
     lbu t1, 0(t5) # Getting next byte
     li t2, 10 # will be used to multiply t0
 
     while_atoi:
         beq t1, x0, end_while_atoi # break if null
+        beq t1, t2, end_while_atoi # break if newline
 
         mul t0, t0, t2
 
@@ -169,11 +212,11 @@ positive_number:
         sb t1, 0(t5) # store the digit in the buffer
 
         rem t0, t0, t3
-        li t1, 10
-        div t3, t3, t1 # t3 = t3 / 10
+        li t1, 10 
+        div t3, t3, t1 # t3 = t3 / 10 ==> increasing the divisor
 
-        addi t5, t5, 1
-        addi t4, t4, 1
+        addi t5, t5, 1 # updating pointer to buffer
+        addi t4, t4, 1 # updating counter
         j while_storing_output
     end_while_storing_output:
 
