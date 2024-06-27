@@ -3,7 +3,7 @@ typedef struct Node {
     struct Node *left, *right;
 } Node;
 
-int recursive_tree_search(NOde *root_node, int val);
+int recursive_tree_search(Node *root_node, int val);
 void puts(const char *str);
 char *gets(char *str);
 int atoi(const char *str);

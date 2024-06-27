@@ -5,9 +5,61 @@
 .globl itoa
 .globl exit
 
+recursive_tree_search:
+    
+
 puts:
+    # We receive pointer to string in a0
+
+    # t1 will be used to read each byte
+    # t2 will hold the size of the string
+    # t5 will be used as a pointer to the string
+
+    addi sp, sp, -4
+    sw ra, 0(sp)
+
+    mv t5, a0 # pointer to string
+    li t2, 0 # size counter
+    lbu t1, 0(t5) # read the first byte
+
+    # ----- Getting string size for output -----
+
+    while_size_string:
+        beq t1, x0, end_while_size_string # break if \0
+
+        addi t2, t2, 1 # increment counter
+        addi t5, t5, 1 # increment pointer
+        lbu t1, 0(t5) # read next byte
+
+        j while_size_string
+    end_while_size_string:
+
+    li t1, 10
+    sb t1, 0(t5) # add newline
+
+    mv a1, a0
+    mv a2, t2
+    jal write
+
+    lw ra, 0(sp)
+    addi sp, sp, 4
+    ret
 
 gets:
+    addi sp, sp, -4
+    sw ra, 0(sp)
+
+    mv t5, a0 # pointer to buffer
+    mv a1, a0 # pointer to buffer used in read
+    li a2, 999 # buffer size
+    
+    jal read
+
+    mv a0, t5
+
+    lw ra, 0(sp)
+    addi sp, sp, 4
+    ret
 
 atoi:
     # We receive the desired number as a string pointed by a0
@@ -49,7 +101,7 @@ cont_atoi:
 
         addi t5, t5, 1
         lbu t1, 0(t5)
-        j_while_input
+        j while_atoi
     end_while_atoi:
     
     mul t0, t0, t6 # multiply the number by the sign
@@ -124,8 +176,8 @@ positive_number:
         addi t4, t4, 1
         j while_storing_output
     end_while_storing_output:
-    
 
+    mv a0, a1 # a0 is the only return value
 
     ret
 
@@ -133,3 +185,19 @@ exit:
     li a0, 0
     li a7, 93
     ecall
+
+read:
+    li a0, 0
+    # a1 already is pointer to buffer
+    # a2 already holds the size of the buffer
+    li a7, 63 # syscall read
+    ecall
+    ret
+
+write:
+    li a0, 1
+    # a1 already is pointer to buffer
+    # a2 already holds the size of the buffer
+    li a7, 64 # syscall write
+    ecall
+    ret
