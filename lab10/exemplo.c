@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "exemplo.h"
 
 char buffer[100];
 
